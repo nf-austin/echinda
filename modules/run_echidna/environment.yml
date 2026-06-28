@@ -15,4 +15,5 @@ dependencies:
   - pip
   - pip:
       - sc-echidna>=1.0.3
+      - PhenoGraph
       - graphviz
