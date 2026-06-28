@@ -1,6 +1,6 @@
 process RUN_ECHIDNA {
     tag { sample_id }
-    publishDir "${params.outdir}/${sample_id}", mode: 'copy'
+    publishDir { "${params.outdir}/${sample_id}" }, mode: 'copy'
 
     conda "${moduleDir}/environment.yml"
     container 'ghcr.io/nf-austin/echidna:1.0.3'
