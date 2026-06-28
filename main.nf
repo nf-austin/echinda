@@ -26,20 +26,52 @@ process DOWNLOAD_GENE_BED {
 workflow {
     // ── Input discovery ───────────────────────────────────────────────────────
     // Mode 1: auto-discover from nf-austin/scrnaseq and nf-austin/wgs-cna output dirs
+    //         --sample_map CSV bridges mismatched naming conventions
     // Mode 2: explicit samplesheet CSV (sample,h5ad,seg_txt) for multi-timepoint or custom inputs
     if (params.scrna_dir) {
-        // scrnaseq layout: {scrna_dir}/{sample_id}/{sample_id}_annotated.h5ad
         ch_h5ad = Channel.fromPath("${params.scrna_dir}/*/*_annotated.h5ad")
             | map { f -> tuple(f.parent.name, f) }
 
         if (params.wgs_dir) {
-            // wgs-cna layout: {wgs_dir}/{sample_id}.seg.txt
             ch_seg = Channel.fromPath("${params.wgs_dir}/*.seg.txt")
                 | map { f -> tuple(f.name.replaceFirst(/\.seg\.txt$/, ''), f) }
-            // Left-join: samples without a matching seg.txt get null (no-WGS mode)
-            ch_input = ch_h5ad
-                .join(ch_seg, remainder: true)
-                .filter { _id, h5ad, _seg -> h5ad != null }
+
+            if (params.sample_map) {
+                // Mapping CSV columns: scrna_sample, wgs_sample
+                // Blank wgs_sample → run that scRNA sample in no-WGS mode
+                // scRNA samples absent from map → skipped
+                // WGS samples absent from map → ignored
+                ch_map = Channel.fromPath(params.sample_map)
+                    | splitCsv(header: true)
+                    | map { row -> tuple(row.scrna_sample, row.wgs_sample ?: null) }
+
+                // Inner join: only process scrna samples that exist on disk AND in the map
+                ch_mapped = ch_map.join(ch_h5ad)
+                    // [scrna_sample, wgs_sample_or_null, h5ad]
+
+                ch_mapped.branch {
+                    has_wgs_name: it[1] != null
+                    no_wgs_name:  true
+                }.set { ch_map_branched }
+
+                // Rekey by wgs_sample to look up seg files; fall back to no-WGS if not found
+                ch_with_seg = ch_map_branched.has_wgs_name
+                    .map    { scrna, wgs, h5ad -> tuple(wgs, scrna, h5ad) }
+                    .join   (ch_seg, remainder: true)
+                    .filter { _wgs, scrna, _h5ad, _seg -> scrna != null }
+                    .map    { _wgs, scrna, h5ad, seg -> tuple(scrna, h5ad, seg) }
+                    // seg is null when mapped wgs_sample has no matching .seg.txt → no-WGS
+
+                ch_no_seg = ch_map_branched.no_wgs_name
+                    .map { scrna, _wgs, h5ad -> tuple(scrna, h5ad, null) }
+
+                ch_input = ch_with_seg.mix(ch_no_seg)
+            } else {
+                // No mapping — match scRNA and WGS samples by name
+                ch_input = ch_h5ad
+                    .join(ch_seg, remainder: true)
+                    .filter { _id, h5ad, _seg -> h5ad != null }
+            }
         } else {
             ch_input = ch_h5ad.map { id, h5ad -> tuple(id, h5ad, null) }
         }
