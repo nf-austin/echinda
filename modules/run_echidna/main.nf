@@ -6,7 +6,7 @@ process RUN_ECHIDNA {
     container 'ghcr.io/nf-austin/echidna:1.0.3'
 
     input:
-    tuple val(sample_id), path(h5ad), path(wgs_csv)
+    tuple val(sample_id), path(h5ad), path(wgs_csv), val(inverse_gamma)
 
     output:
     tuple val(sample_id), path("${sample_id}_echidna.h5ad"),     emit: h5ad
@@ -29,7 +29,7 @@ process RUN_ECHIDNA {
         --learning_rate ${params.learning_rate} \\
         --val_split ${params.val_split} \\
         --seed ${params.seed} \\
-        --inverse_gamma ${params.inverse_gamma} \\
+        --inverse_gamma ${inverse_gamma} \\
         --n_comps ${params.n_comps} \\
         --phenograph_k ${params.phenograph_k} \\
         --n_neighbors ${params.n_neighbors} \\

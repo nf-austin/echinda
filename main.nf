@@ -105,10 +105,10 @@ workflow {
     ch_with_w = ch_branched.with_wgs
         .map    { id, h5ad, _seg -> tuple(id, h5ad) }
         .join   (SEG_TO_GENE_CN.out.wgs_csv)
-        .map    { id, h5ad, wcsv -> tuple(id, h5ad, wcsv) }
+        .map    { id, h5ad, wcsv -> tuple(id, h5ad, wcsv, params.inverse_gamma) }
 
     ch_without_w = ch_branched.without_wgs
-        .map { id, h5ad, _null -> tuple(id, h5ad, []) }
+        .map { id, h5ad, _null -> tuple(id, h5ad, [], true) }
 
     ch_with_w.mix(ch_without_w) | RUN_ECHIDNA
 }

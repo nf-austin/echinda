@@ -130,7 +130,7 @@ ad.concat([pre, post], index_unique="-").write_h5ad("patient1_combined.h5ad")
 | `--val_split` | `0.1` | Fraction held out for validation |
 | `--patience` | `null` | Early stopping patience (null = disabled) |
 | `--seed` | `42` | Random seed |
-| `--inverse_gamma` | `false` | Inverse-Gamma prior on eta variance (recommended without WGS) |
+| `--inverse_gamma` | `false` | Inverse-Gamma prior on eta variance; automatically `true` for any sample without WGS |
 | `--n_hmm_components` | `5` | HMM states for CNV inference |
 | `--n_gmm_components` | `5` | GMM components for neutral CNA estimation |
 | `--gaussian_smoothing` | `true` | Gaussian smoothing before HMM |
