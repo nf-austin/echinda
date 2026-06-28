@@ -3,7 +3,6 @@ process RUN_ECHIDNA {
     publishDir { "${params.outdir}/${sample_id}" }, mode: 'copy'
 
     conda "${moduleDir}/environment.yml"
-    container 'ghcr.io/nf-austin/echidna:1.0.3'
 
     input:
     tuple val(sample_id), path(h5ad), path(wgs_csv), val(inverse_gamma)
