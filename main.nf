@@ -5,7 +5,6 @@ include { RUN_ECHIDNA }    from './modules/run_echidna/main'
 
 process DOWNLOAD_GENE_BED {
     storeDir "${params.outdir}/reference"
-    container 'ubuntu:22.04'
 
     input:
     val genome
